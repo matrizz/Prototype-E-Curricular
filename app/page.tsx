@@ -4,7 +4,6 @@ import { SearchInput } from "./components/searchInput";
 import { CardOption } from "./components/cardOption";
 import { lexend } from "./components/lexend";
 const course = "Tecnico em Informatica para Internet";
-
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -48,7 +47,7 @@ export default function Home() {
               Upload a new resume file from your computer
             </p>
           </CardOption>
-          <CardOption redirect="/create">
+          <CardOption redirect="/form">
             <h1 className="text-center text-lg font-bold">Create</h1>
             <p className="text-slate-700 text-sm text-center">( soon )</p>
           </CardOption>
@@ -66,6 +65,8 @@ export default function Home() {
     </div>
   );
 }
+
+
 
 // color palette
 

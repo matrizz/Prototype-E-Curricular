@@ -4,15 +4,15 @@
 
 :root {
   --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 245, 245, 245;
-  --background-end-rgb: 255, 255, 255;
 }
 
-html {
+html, body {
   scroll-behavior: smooth;
-  height: 100vh;
+  height: 100vh !important;
 }
-
+body {
+  overflow-y: scroll;
+}
 /* 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -36,6 +36,10 @@ html {
   }
 }
 
+input[type='number']::-webkit-inner-spin-button {
+  appearance: none;
+}
+
 @media screen and (max-width: 832px) {
   .credits {
     display: none;
@@ -45,9 +49,6 @@ html {
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
 }
 
 @layer utilities {

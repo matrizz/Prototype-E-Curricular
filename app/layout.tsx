@@ -7,6 +7,7 @@ const lexend = Lexend({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "By Matrizz",
   description: "powered by Etec - Itanhaém",
+  icons: {icon: './favicon.ico'}
 };
 
 export default function RootLayout({
@@ -16,7 +17,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={lexend.className}>{children}</body>
+      <head>
+
+      <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon" />
+      </head>
+      <body className={`${lexend.className}`}>{children}</body>
     </html>
   );
 }

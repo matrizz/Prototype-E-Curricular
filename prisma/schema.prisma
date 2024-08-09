@@ -14,38 +14,34 @@ datasource db {
 }
 
 model Student {
-  id        String   @id @default(cuid())
-  name      String
-  email     String
-  phone     String
-  image     String
-  address   String
-  birth     DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String      @id @default(cuid())
+  name       String
+  email      String      @unique
+  phone      String      @unique
+  RM         Int         @unique
+  image      Bytes
+  address    String
+  birth      DateTime
+  curriculum Curriculum?
+  course     Course?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 }
 
 model Course {
-  id          String   @id @default(uuid())
-  name        String
-  description String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  shifts      Shift[]
-}
-
-model Shift {
   id        String   @id @default(uuid())
   name      String
-  course    Course   @relation(fields: [courseId], references: [id])
-  courseId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user_id   String   @unique
+  user      Student  @relation(fields: [user_id], references: [id])
 }
 
 model Curriculum {
-  id String @id @default(uuid())
-  file Bytes
+  id        String   @id @default(uuid())
+  file      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user_id   String   @unique
+  user      Student  @relation(fields: [user_id], references: [id])
 }
