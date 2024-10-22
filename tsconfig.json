@@ -28,7 +28,9 @@
     ".next/types/**/*.ts",
     "app/tests/test.js",
     "app/prisma.js",
-    "api/teste/index.ts"
+    "api/teste/index.ts",
+    "app/pages/api/hello.js",
+    "api/hello.js"
   ],
   "exclude": ["node_modules"]
 }

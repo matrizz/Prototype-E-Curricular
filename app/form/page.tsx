@@ -1,70 +1,133 @@
 'use client'
-import React, { Dispatch, DOMAttributes, FormEvent, KeyboardEventHandler, MouseEventHandler, SetStateAction, useEffect } from "react"
-import { ChangeEvent, ChangeEventHandler, useState } from "react"
-import InputMask from 'react-input-mask'
+import React, { Dispatch, HTMLInputTypeAttribute, SetStateAction, useEffect, useRef } from "react"
+import { ChangeEvent, useState } from "react"
 import Section from "../components/accordion"
-import { Styles } from "../components/styles/input"
-import { Style } from "@mui/icons-material"
+import { useForm } from "react-hook-form"
+import { DataValidation, DataFormatter } from "../validation"
+import { SaveCurriculumData, SaveImageData } from "./save-data"
+import { auth } from "@/firebase/firebase"
+import useProtectedRoute from "../hooks/useProtectedRoute"
+import { useRouter } from "next/navigation"
+import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs"
 
-
-export type StateHandlerProps = {
-    state: string
-    arr: string[]
-    setState: Dispatch<SetStateAction<string>>
-    event: ChangeEvent<HTMLInputElement>
-}
-
-
-export class StateHandler {
-
-    changeStateHandler?({ state, arr, setState, event }: StateHandlerProps): void {
-        setState(event.target.value)
-    };
-
-    maskKeyHandler?({ state, arr, setState, event }: StateHandlerProps): void {
-        // @ts-ignore
-        if (event.key === ' ' && !state.endsWith(',') && !state.endsWith(' ')) {
-            event.preventDefault();
-            setState(state + ', ');
-        }
-    }
-}
 
 export default function Curriculo() {
 
+    const router = useRouter()
     const [imageSrc, setImageSrc] = useState('https://img.freepik.com/vetores-premium/icones-e-notificacoes-planas-do-instagram_619991-50.jpg')
-    const [cep, setCep] = useState('')
-    const [celular, setCelular] = useState('')
-    const [celular2, setCelular2] = useState('')
-    const [nascimento, setNascimento] = useState('')
-    const [isClear, setIsClear] = useState<boolean>(false)
+    const [image, setImage] = useState()
+    const [data, setData] = useQueryStates({
+        nome: parseAsString.withDefault(''),
+        nascimento: parseAsString.withDefault(''),
+        genero: parseAsString.withDefault(''),
+        cep: parseAsString.withDefault(''),
+        cidade: parseAsString.withDefault(''),
+        uf: parseAsString.withDefault(''),
+        pais: parseAsString.withDefault(''),
+        celular: parseAsString.withDefault(''),
+        celular2: parseAsString.withDefault(''),
+        email: parseAsString.withDefault(''),
+        empresa: parseAsString.withDefault(''),
+        cargo: parseAsString.withDefault(''),
+        fim_servico: parseAsString.withDefault(''),
+        inicio_servico: parseAsString.withDefault(''),
+        instituto: parseAsString.withDefault(''),
+        curso: parseAsString.withDefault(''),
+        inicio: parseAsString.withDefault(''),
+        fim: parseAsString.withDefault(''),
+        idiomas: parseAsString.withDefault(''),
+        nivel: parseAsString.withDefault(''),
+        habilidades: parseAsString.withDefault(''),
+        objetivo: parseAsString.withDefault('')
+    })
+    const [idiomas, setIdiomas] = useState(data.idiomas[0] === ',' ? data.idiomas.slice(1, data.idiomas.length) : data.idiomas)
+    const { UID } = useProtectedRoute(['admin', 'user'], '/login')
+    const habilidadesRef = useRef(null)
+    const objetivoRef = useRef(null)
 
+    useEffect(() => {
+        console.log(// Array.from(data.idiomas).filter((i) => i !== data.idiomas[0])
+            data.idiomas[0] === ',' ? data.idiomas.slice(1, data.idiomas.length) : data.idiomas)
+        setData({ idiomas: Array.isArray(idiomas) && idiomas[0].length > 0 ? idiomas.join(',') : idiomas })
+    }, [idiomas])
 
-    const handler = new StateHandler()
-    const changeStateHandler = handler.changeStateHandler
+    const { register, handleSubmit } = useForm()
+    function handleIdiomasSet(lang: string) {
+        //@ts-ignore
+        setIdiomas(() => {
+            let arr = [''];
+            if (Array.isArray(idiomas)) {
 
-    const maskKeyHandler = handler.maskKeyHandler
-    function handleCep(e: ChangeEvent<HTMLInputElement>) {
-        setCep(e.target.value)
+                if (idiomas.includes(lang)) return arr = idiomas.filter((idioma) => idioma !== lang)
+                else arr = [...idiomas, lang]
+                setData({ idiomas: arr.join(',') })
+            }
+            return arr
+        })
     }
-    function handleCelular(e: ChangeEvent<HTMLInputElement>) {
-        setCelular(e.target.value)
-    }
-    function handleCelular2(e: ChangeEvent<HTMLInputElement>) {
-        setCelular2(e.target.value)
+
+    async function handleFormData(data: any) {
+        const validacao = DataFormatter(data)
+
+        //@ts-ignore
+        if (!validacao.success) {
+        //@ts-ignore
+            alert(JSON.stringify(validacao.error))
+        //@ts-ignore
+            console.log(validacao.error)
+            console.log('validou com erro')
+        }
+
+        const imgUrl = await SaveImageData(image, UID)
+        //@ts-ignore
+        validacao.data.picture = imgUrl
+        //@ts-ignore
+        const newDataObj = validacao.data
+        const resume = await SaveCurriculumData(newDataObj, UID)
+
+        //@ts-ignore
+        router.push(`/resumes/myresume/${resume.id}`)
+
     }
 
+    const handleKeyDown = (event, ref) => {
+        // Verifica se a tecla pressionada é a Tab
+        const textarea = ref.current;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        if (event.key === 'Tab') {
+            event.preventDefault(); // Impede o comportamento padrão (mudar foco)
+
+            // Insere uma tabulação (quatro espaços ou um caractere de tabulação "\t")
+            textarea.value = textarea.value.substring(0, start) + "\t" + textarea.value.substring(end);
+
+            // Atualiza a posição do cursor
+            textarea.selectionStart = textarea.selectionEnd = start + 1;
+        }
+
+        // Verifica se a tecla pressionada é o Enter
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Impede o comportamento padrão de quebra de linha
+
+            // Insere uma nova linha
+            textarea.value = textarea.value.substring(0, start) + "\n" + textarea.value.substring(end);
+
+            // Atualiza a posição do cursor para a nova linha
+            textarea.selectionStart = textarea.selectionEnd = start + 1;
+        }
+    };
 
     const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
         // @ts-ignore
-        const file = e.target.files[0];
+        const file = e.target.files[0]
+
         if (file) {
             const img = new Image();
             const reader = new FileReader();
 
             reader.onload = (e) => {
                 // @ts-ignore
-                img.src = e.target.result;
+                img.src = e.target.result
             };
 
             img.onload = () => {
@@ -74,112 +137,62 @@ export default function Curriculo() {
                 // Verifica se a imagem é 3:4 ou menor que 500x500
                 if ((width === 0 || height === 0) ||
                     ((width / height !== 3 / 4) && (width > 1200 || height > 1200))) {
-                    alert('A imagem deve ter proporção 3:4 ou ser menor que 500x500 pixels.')
+                    alert('A imagem deve ser menor que 500x500 pixels.')
                     setImageSrc('');
                 } else {
                     setImageSrc(img.src);
+                    //@ts-ignore
+                    setImage(e.target.files[0])
                 }
             };
+
 
             reader.readAsDataURL(file);
         }
 
-
-
     };
-
-
-    const [fields] = useState([
-        'nome',
-        'nascimento',
-        // 'genero',
-        'rua',
-        'numero_da_rua',
-        'cep',
-        'bairro',
-        'cidade',
-        'uf',
-        'pais',
-        'celular',
-        'celular2',
-        'email',
-        'empresa',
-        'cargo',
-        'data_fim_servico',
-        'data_inicio_servico',
-        'instituto',
-        'curso',
-        'data_inicio_curso',
-        'data_fim_curso',
-        'idiomas',
-        'nivel',
-        'habilidades',
-        'objetivo',
-        'test',
-    ])
-
-    function handleFormData(data: FormData) {
-        fields.map(field => {
-            const fieldValue = data.get(field)
-        }
-        )
-
-    }
-    function clearForm(e: any) {
-        e.preventDefault()
-        if (confirm('Deseja limpar todos os campos do formulário?')) {
-            setImageSrc('')
-            setCep('')
-            setCelular('')
-            setCelular2('')
-            setNascimento('')
-        } else {
-            return
-        }
-    }
-    const [genero, setGenero] = useState('')
-
-    function handleGenero(e: ChangeEvent<HTMLInputElement>) {
-        setGenero(e.target.value)
-    }
-
-    function handleNascimento(e: ChangeEvent<HTMLInputElement>) {
-        setNascimento(e.target.value)
-    }
 
     return (
 
         <div className="flex justify-center items-center">
-            <form action={handleFormData} className="w-[35rem] flex flex-col mt-7 p-2">
+            <form onSubmit={handleSubmit(handleFormData)} className="w-[35rem] flex flex-col mt-7 p-2">
 
                 <div className="py-8">
                     <div className="flex flex-col justify-center w-full items-center gap-3 mt-8">
                         <label htmlFor="profile_pic" className="w-48 h-48 border-2 bg-contain rounded overflow-hidden cursor-pointer"><img className="" src={imageSrc} /></label>
-                        <input type="file" onChange={handleImageChange} accept="image/*" placeholder="Nome:" id="profile_pic" className="hidden w-72 h-72 border-2  " />
+                        <input className="hidden w-72 h-72 border-2" type="file" onChange={handleImageChange} accept="image/*" name="picture" placeholder="Nome:" id="profile_pic" />
                     </div>
                 </div>
                 <Section legend="Dados Pessoais">
-                    <input className={`${Styles.input} capitalize`} type="text" name="nome" autoFocus placeholder="Nome*" />
+                    <input className="border-black px-2 border-2 capitalize rounded-md mt-3" {...register('nome')} value={data.nome}
+                        onChange={(e) => setData({
+                            nome: e.target.value
+                        })} autoFocus placeholder="Nome*" />
 
-
-                    <InputMask
-                        mask={'99/99/9999'}
-                        name="nascimento"
-                        value={nascimento}
-                        onChange={handleNascimento}
+                    <input
+                        {...register('nascimento')}
+                        onChange={(e) => {
+                            setData({ nascimento: e.target.value })
+                        }}
+                        value={(data.nascimento)}
+                        className="border-black px-2 border-2 rounded-md mt-3"
                         placeholder="Data de Nascimento*"
-                        id="nascimento"
-                    >
-                        {/* @ts-ignore*/}
-                        {(inputProps: any) => <input className={`${Styles.input}`} {...inputProps} type="text" />}
-                    </InputMask>
+
+                    />
                     <div className="my-2 flex flex-col gap-2">
                         <div className="items-center flex">
-                            <input className={`${Styles.input} mt-1 mr-2`} checked={genero === 'masculino'} value='masculino' onChange={handleGenero} name="genero" id="masculino" type="radio" />
+                            <input className="border-black px-2 border-2 rounded-md mt-1 mr-2" value='masculino' id="masculino" {...register('genero')} checked={data.genero == 'masculino' ? true : false}
+                                onChange={(e) => setData({
+                                    genero: e.target.value
+                                })
+                                } type="radio" />
                             <label htmlFor="masculino">Masculino</label>
                         </div>
                         <div>
-                            <input className={`${Styles.input} mt-1 mr-2`} checked={genero === 'feminino'} value='feminino' onChange={handleGenero} name="genero" id="feminino" type="radio" />
+                            <input className="border-black px-2 border-2 rounded-md mt-1 mr-2" value='feminino' id="feminino" {...register('genero')} checked={data.genero == 'feminino' ? true : false}
+                                onChange={(e) => setData({
+                                    genero: e.target.value
+                                })} type="radio" />
                             <label htmlFor="feminino">Feminino</label>
                         </div>
                     </div>
@@ -187,26 +200,28 @@ export default function Curriculo() {
 
                 <Section subsection legend="Endereço">
                     <div className="flex flex-wrap gap-y-0 gap-3">
-                        <input className={`${Styles.input} flex-1`} name="rua" type="text" placeholder="Rua* " />
-                        <input className={`${Styles.input} w-32`} name="numero_da_rua" type="number" placeholder="Número* " />
-                        <input className={`${Styles.input} flex-1`} name="bairro" type="text" placeholder="Bairro* " />
-                        <input className={`${Styles.input}`} name="cidade" type="text" placeholder="Cidade*" />
+                        <input className="border-black px-2 border-2 rounded-md mt-3" {...register('cidade')} value={data.cidade} onChange={(e) => {
+                            setData({
+                                cidade: e.target.value
+                            })
+                        }} type="text" placeholder="Cidade*" />
 
+                        <input
+
+                            className="border-black px-2 border-2 rounded-md mt-3"
+                            placeholder="Cep*"
+                            {...register('cep')}
+                            value={data.cep}
+                            onChange={(e) => {
+                                setData({
+                                    cep: e.target.value
+                                })
+                            }}
+                            id="cep"
+                        />
+                        <input className="border-black px-2 border-2 rounded-md mt-3 w-12 uppercase" {...register('uf')} value={data.uf || 'sp'} type="text" placeholder="UF*" maxLength={2} />
                         <div className="flex w-full gap-4">
-
-                            <InputMask
-                                mask="99999-999"
-                                placeholder="Cep*"
-                                value={cep}
-                                onChange={handleCep}
-                                name="cep"
-                                id="cep"
-                            >
-                                {/* @ts-ignore*/}
-                                {(inputProps: any) => <input className={`${Styles.input} flex-1`} {...inputProps} type="text" />}
-                            </InputMask>
-                            <input className={`${Styles.input} w-12 uppercase`} name="uf" type="text" placeholder="UF*" maxLength={2} />
-                            <input className={`${Styles.input}`} name="pais" type="text" placeholder="País*" value="Brasil" readOnly disabled />
+                            <input className="border-black px-2 border-2 rounded-md mt-3" type="text" placeholder="País*" {...register('pais')} value={data.pais || 'Brasil'} readOnly />
                         </div>
                     </div>
 
@@ -215,89 +230,144 @@ export default function Curriculo() {
 
                 <Section subsection legend="Contato" >
                     <div className="flex flex-wrap gap-y-0 gap-3">
-                        <InputMask
-                            mask="(99) 99999-9999"
-                            name="celular"
-                            value={celular}
-                            onChange={handleCelular}
+                        <input
+
+                            className="border-black px-2 border-2 rounded-md mt-3"
+                            type="tel"
                             placeholder="Celular*"
+                            {...register('celular')}
+                            value={data.celular}
+                            onChange={(e) => {
+                                setData({
+                                    celular: e.target.value
+                                })
+                            }}
                             id="celular"
-                        >
-                            {/* @ts-ignore*/}
-                            {(inputProps: any) => <input className={`${Styles.input}`} {...inputProps} type="tel" />}
-                        </InputMask>
-                        <InputMask
-                            mask="(99) 99999-9999"
-                            name="celular2"
-                            value={celular2}
-                            onChange={handleCelular2}
+                        /><input
+
+                            className="border-black px-2 border-2 rounded-md mt-3"
+                            type="tel"
                             placeholder="Celular 2 (opcional)"
+                            {...register('celular2')}
+                            value={data.celular2}
+                            onChange={(e) => {
+                                setData({
+                                    celular2: e.target.value
+                                })
+                            }}
                             id="celular2"
-                        >
-                            {/* @ts-ignore*/}
-                            {(inputProps: any) => <input className={`${Styles.input}`} {...inputProps} type="tel" />}
-                        </InputMask>
-                        <input name="email" type="email" className={`${Styles.input} flex-1`} placeholder="Email*" />
+                        />
+                        <input type="email" className="border-black px-2 border-2 rounded-md mt-3 flex-1" {...register('email')} value={data.email} onChange={(e) => {
+                            setData({
+                                email: e.target.value
+                            })
+                        }} placeholder="Email*" />
                     </div>
                 </Section>
 
                 <Section expandable legend="Formação acadêmica">
-                    <input className={`${Styles.input}`} name="instituto" type="text" placeholder="Nome da instituição:" value="Etec de Itanhaém" readOnly disabled />
-                    <select className="border-black border-2 rounded p-1 mt-3 " name="curso">
+                    <input className="border-black px-2 border-2 rounded-md mt-3" type="text" {...register('instituto')} value={data.instituto || 'Etec de Itanhaém'} onChange={(e) => {
+                        setData({
+                            instituto: e.target.value
+                        })
+                    }} placeholder="Nome da instituição:" readOnly />
+                    <select className="border-black border-2 rounded p-1 mt-3 " {...register('curso')} value={data.curso} onChange={(e) => {
+                        setData({
+                            curso: e.target.value
+                        })
+                    }}>
                         <option>Selecione um curso</option>
-                        <option value="min">MIN - Técnico em Informática para Internet</option>
-                        <option value="mam">MAM - Técnico em Meio Ambiente</option>
-                        <option value="mad">MAD - Técnico em Administração</option>
+                        <option value="MIN - Técnico em Informática para Internet">MIN - Técnico em Informática para Internet</option>
+                        <option value="MAM - Técnico em Meio Ambiente">MAM - Técnico em Meio Ambiente</option>
+                        <option value="MAD - Técnico em Administração">MAD - Técnico em Administração</option>
                     </select>
-                    <input className={`${Styles.input}`} name="data_inicio_curso" type="number" maxLength={4} placeholder="Ano de inicio" />
-                    <input className={`${Styles.input}`} name="data_fim_curso" type="number" maxLength={4} placeholder="Ano de Conclusão (ou previsão de término)" />
-                </Section>
-
-                {/* 
-                <IconButton onClick={addNewSection} className="gap-2 mt-4">
-                    <AddBox />
-                    <strong>
-                        Adicionar nova sessão
-                    </strong>
-                </IconButton> */}
-                <Section expandable legend="Experiência profissional">
-                    <input className={`${Styles.input}`} name="empresa" type="text" placeholder="Nome da empresa:" />
-                    <input className={`${Styles.input}`} name="cargo" type="text" placeholder="Cargo:" />
-
-                    <input className={`${Styles.input}`} name="data_inicio_servico" type="number" maxLength={4} placeholder="Ano de inicio" />
-                    <input className={`${Styles.input}`} name="data_fim_servico" type="number" maxLength={4} placeholder="Ano de término" />
+                    <div className="flex gap-4 mt-3">
+                        <label htmlFor="inicio" className="flex gap-2 items-center justify-center">
+                            De
+                            <input maxLength={4} className="border-black px-2 border-2 max-w-16 rounded-md" {...register('inicio')} value={data.inicio} onChange={(e) => {
+                                setData({
+                                    inicio: e.target.value
+                                })
+                            }} type="number" placeholder="ano" />
+                        </label>
+                        <label htmlFor="fim" className="flex gap-2 items-center justify-center">
+                            até
+                            <input maxLength={4} className="border-black px-2 border-2 max-w-16 rounded-md" {...register('fim')} value={data.fim} onChange={(e) => {
+                                setData({
+                                    fim: e.target.value
+                                })
+                            }} type="number" placeholder="ano" />
+                        </label>
+                    </div>
                 </Section>
                 <Section expandable legend="Idiomas">
-                    {/*@ts-ignore*/}
-                    <input name="idiomas" type="text" className={`${Styles.input} mb-2`} placeholder='Idiomas (ex.: "Inglês, Espanhol")' maskKeyHandler={maskKeyHandler} changeStateHandler={changeStateHandler} />
-                    <select className="border-black border-2 rounded p-1" name="nivel">
+                    <div className="flex gap-4 pl-2 pb-2">
+                        <div className="flex flex-col">
+                            <label htmlFor="en" className="flex gap-2">
+                                <input type="checkbox" id="en" {...register('ingles')} checked={data.idiomas.includes('Inglês')}
+                                    onChange={() => handleIdiomasSet('Inglês')} value="Inglês" />
+                                Inglês
+                            </label>
+                            <label htmlFor="es" className="flex gap-2">
+                                <input type="checkbox" id="es" {...register('espanhol')} checked={data.idiomas.includes('Espanhol')}
+                                    onChange={() => handleIdiomasSet('Espanhol')} value="Espanhol" />
+                                Espanhol
+                            </label>
+                        </div>
+                        <div className="flex flex-col">
+
+                            <label htmlFor="fr" className="flex gap-2">
+                                <input type="checkbox" id="fr" {...register('fances')} checked={data.idiomas.includes('Francês')}
+                                    onChange={() => handleIdiomasSet('Francês')} value="Francês" />
+                                Francês
+                            </label>
+                            <label htmlFor="de" className="flex gap-2">
+                                <input type="checkbox" id="de" {...register('alemao')} checked={data.idiomas.includes('Alemão')}
+                                    onChange={() => handleIdiomasSet('Alemão')} value="Alemão" />
+                                Alemão
+                            </label>
+                        </div>
+                    </div>
+                    <select className="border-black border-2 rounded p-1" {...register('nivel')} value={data.nivel} onChange={(e) => {
+                        setData({
+                            nivel: e.target.value
+                        })
+                    }}>
                         <option value="basico">Básico</option>
                         <option value="intermediario">Intermediario</option>
+                        <option value="tecnico">Técnico</option>
                         <option value="fluente">Fluente</option>
                     </select>
                 </Section>
 
                 <Section expandable legend="Habilidades">
-                    <textarea className="w-full mt-3 border-black border-2 rounded p-2 min-h-20" placeholder={`• Técnicas\n• Interpessoais (comunicação, trabalho em equipe, etc.)`} autoComplete="no" name="habilidades">
+                    <textarea onKeyDown={(e) => handleKeyDown(e, habilidadesRef)} className="w-full mt-3 border-black border-2 rounded p-2 min-h-20" placeholder={`• Técnicas\n• Interpessoais (comunicação, trabalho em equipe, etc.)`} autoComplete="no" {...register('habilidades')} onChange={(e) => {
+                        setData({
+                            habilidades: e.target.value
+                        })
+                    }} ref={habilidadesRef} value={data.habilidades}>
 
                     </textarea>
                 </Section>
 
-                <Section expandable legend="Objetivos">
+                <Section expandable legend="Objetivo">
 
 
                     <div className="w-full mt-3 pb-4">
-                        <textarea className="w-full mt-3 border-black border-2 rounded p-2 min-h-20" placeholder="Uma breve descrição de seus objetivos de carreira e o que você busca na posição desejada." autoComplete="no" name="objetivo" defaultValue={''}>
+                        <textarea onKeyDown={(e) => handleKeyDown(e, objetivoRef)} className="w-full mt-3 border-black border-2 rounded p-2 min-h-20" placeholder="Uma breve descrição de seus objetivos de carreira e o que você busca na posição desejada." autoComplete="no" onChange={(e) => {
+                            setData({
+                                objetivo: e.target.value
+                            })
+                        }} ref={objetivoRef} value={data.objetivo}>
 
                         </textarea>
                     </div>
                 </Section>
                 <footer className="flex mb-8 gap-2 w-full">
                     <button className="bg-emerald-400 font-bold rounded-md py-1 px-8 text-white" about="teet" type="submit">Salvar</button>
-                    <button onClick={clearForm} className="bg-red-400 font-bold rounded-md py-1 px-8 text-white" type="reset">Limpar</button>
+                    <button onClick={e => confirm('Deseja limpar todos os campos?') ? null : e.preventDefault()} className="bg-red-400 font-bold rounded-md py-1 px-8 text-white" type="reset">Limpar</button>
                 </footer>
             </form>
-
         </div>
 
     )

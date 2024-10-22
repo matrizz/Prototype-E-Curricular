@@ -10,9 +10,6 @@ html, body {
   scroll-behavior: smooth;
   height: 100vh !important;
 }
-body {
-  overflow-y: scroll;
-}
 /* 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -55,4 +52,30 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+@keyframes bounce-sequence {
+  0%, 100% { 
+    transform: translateY(0);
+    height: 4px;
+  } /* No movimento no início e no fim */
+  50% { 
+    transform: translateY(-8px);
+    height: 16px;
+  } /* Pulo no meio */
+}
+
+.bounce-delay-1 {
+  animation: bounce-sequence 1.5s infinite;
+  animation-delay: 0.4s;
+}
+
+.bounce-delay-2 {
+  animation: bounce-sequence 1.5s infinite;
+  animation-delay: 0.6s;
+}
+
+.bounce-delay-3 {
+  animation: bounce-sequence 1.5s infinite;
+  animation-delay: 0.75s;
 }

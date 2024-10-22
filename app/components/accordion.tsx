@@ -78,9 +78,9 @@ export default function Section({ className, children, legend, subsection, expan
 
     function handleLoadTimeOut() {
         setTimeout(() => {
-                setTimeOut(true)
-                
-            }, 75
+            setTimeOut(true)
+
+        }, 75
         )
     }
 
@@ -96,10 +96,9 @@ export default function Section({ className, children, legend, subsection, expan
                     </>
                     : <>
                         <Divider expanded={expandSection} expandable={expandable} clickHandler={handleSectionExpand} textCase='uppercase' label={legend} />
-                        <Accordion expanded={expandSection} className={`border-none ${pageLoad? 'h-0' : ''}  transition-all duration-300 ease-in-out shadow-none mt-2 flex flex-wrap flex-col w-full`}>
+                        <Accordion expanded={expandSection} className={`border-none ${pageLoad ? 'h-0' : ''}  transition-all duration-300 ease-in-out shadow-none mt-2 flex flex-wrap flex-col w-full`}>
                             <AccordionSummary className='hidden' />
                             <AccordionDetails className='p-0 flex transition-all duration-300 ease-in-out flex-wrap flex-col flex-1'>
-
                                 {children}
                             </AccordionDetails>
                         </Accordion>
