@@ -63,3 +63,13 @@ export const getAllCurriculums = async () => {
         return [];
     }
 };
+
+async function getCurriculumsByName(nome: string) {
+    const curriculosRef = collection(db, "curriculos");
+    const q = query(curriculosRef, where("pessoal.nome", "==", nome));
+
+    const querySnapshot = await getDocs(q);
+    const resultados = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    return resultados;
+}

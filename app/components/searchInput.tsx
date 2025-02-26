@@ -1,9 +1,10 @@
-"use client";
+'use client'
+
 import { Search } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 
 export const SearchInput = () => {
-  const examples = ["aluno1", "informática", "2 ano"];
+  const examples = ["aluno1", "informática", "MIN"];
 
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
@@ -17,12 +18,12 @@ export const SearchInput = () => {
 
   return (
     <div>
-      <form>
+      <form action={"/search"}>
         <div>
           <input
             type="text"
             placeholder={`ex.: ${examples[placeholderIndex]}`}
-            className="w-96 px-5 py-2 border-2 outline-none border-slate-300 dark:border-gray-600 border-r-0 rounded-l rounded-bl"
+            className="w-64 lg:w-96 px-5 py-2 border-2 outline-none border-slate-300 dark:border-gray-600 border-r-0 rounded-l rounded-bl"
           />
           <button
             type="submit"

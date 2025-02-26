@@ -2,9 +2,9 @@ import { z } from 'zod'
 
 export type CreateDataSchema = z.infer<typeof createDataSchema>
 
-export const DataFormatter = (formdata: any) => {
+export const DataFormatter = (formdata: any): CreateDataSchema => {
 
-
+    console.log('formatando', formdata['habilidades'])
     const data: CreateDataSchema = {
         pessoal: {
             nome: formdata['nome'],
@@ -26,7 +26,7 @@ export const DataFormatter = (formdata: any) => {
             //@ts-ignore
             fim: parseInt(formdata['fim']),
             idiomas: {
-                idiomas: formdata['idiomas'],
+                idiomas: `${formdata['ingles'],formdata['espanhol'],formdata['frances'],formdata['alemao']}`,
                 nivel: formdata['nivel'],
             }
         },

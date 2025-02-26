@@ -46,7 +46,15 @@ export default function Resumes() {
         {
           data &&
           data.map((resume, i) => {
-            return <Card name={resume.pessoal.nome} born={resume.pessoal.nascimento} img={resume.picture} description={resume.descricao.objetivo} course={resume.educacional.curso} id={i} key={resume.id} />
+            return <Card
+              name={resume.pessoal.nome}
+              born={resume.pessoal.nascimento}
+              img={resume.picture}
+              description={resume.descricao.objetivo}
+              course={resume.educacional.curso}
+              id={resume.id}
+              key={resume.id}
+            />
           })
         }
       </section>

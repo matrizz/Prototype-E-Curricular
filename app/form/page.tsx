@@ -1,6 +1,8 @@
 'use client'
 import React, { Dispatch, HTMLInputTypeAttribute, SetStateAction, useEffect, useRef } from "react"
 import { ChangeEvent, useState } from "react"
+import dynamic from "next/dynamic";
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 import Section from "../components/accordion"
 import { useForm } from "react-hook-form"
 import { DataValidation, DataFormatter } from "../validation"
@@ -9,6 +11,8 @@ import { auth } from "@/firebase/firebase"
 import useProtectedRoute from "../hooks/useProtectedRoute"
 import { useRouter } from "next/navigation"
 import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs"
+import "react-quill/dist/quill.snow.css";
+
 
 
 export default function Curriculo() {
@@ -16,6 +20,8 @@ export default function Curriculo() {
     const router = useRouter()
     const [imageSrc, setImageSrc] = useState('https://img.freepik.com/vetores-premium/icones-e-notificacoes-planas-do-instagram_619991-50.jpg')
     const [image, setImage] = useState()
+
+
     const [data, setData] = useQueryStates({
         nome: parseAsString.withDefault(''),
         nascimento: parseAsString.withDefault(''),
@@ -42,12 +48,19 @@ export default function Curriculo() {
     })
     const [idiomas, setIdiomas] = useState(data.idiomas[0] === ',' ? data.idiomas.slice(1, data.idiomas.length) : data.idiomas)
     const { UID } = useProtectedRoute(['admin', 'user'], '/login')
-    const habilidadesRef = useRef(null)
-    const objetivoRef = useRef(null)
+
+
+    function handleSetHabilidades(e: string) {
+        setData({ habilidades: e })
+    }
+
+    function handleSetObjetivo(e: string) {
+        setData({ objetivo: e })
+    }
 
     useEffect(() => {
-        console.log(// Array.from(data.idiomas).filter((i) => i !== data.idiomas[0])
-            data.idiomas[0] === ',' ? data.idiomas.slice(1, data.idiomas.length) : data.idiomas)
+        // Array.from(data.idiomas).filter((i) => i !== data.idiomas[0])
+        data.idiomas[0] === ',' ? data.idiomas.slice(1, data.idiomas.length) : data.idiomas
         setData({ idiomas: Array.isArray(idiomas) && idiomas[0].length > 0 ? idiomas.join(',') : idiomas })
     }, [idiomas])
 
@@ -66,56 +79,30 @@ export default function Curriculo() {
         })
     }
 
-    async function handleFormData(data: any) {
-        const validacao = DataFormatter(data)
+    async function handleFormData(fdata: FormData) {
+        // @ts-ignore
+        fdata.habilidades = data.habilidades
+        // @ts-ignore
+        fdata.objetivo = data.objetivo
+
+        const validacao = DataValidation(DataFormatter(fdata))
 
         //@ts-ignore
         if (!validacao.success) {
-        //@ts-ignore
-            alert(JSON.stringify(validacao.error))
-        //@ts-ignore
-            console.log(validacao.error)
-            console.log('validou com erro')
+            alert('Erro ao salvar curriculo')
+            console.error(JSON.stringify(validacao.error))
         }
-
+        //@ts-ignore
         const imgUrl = await SaveImageData(image, UID)
         //@ts-ignore
         validacao.data.picture = imgUrl
-        //@ts-ignore
+        
         const newDataObj = validacao.data
-        const resume = await SaveCurriculumData(newDataObj, UID)
+        const resume = await SaveCurriculumData(newDataObj, UID!)
 
-        //@ts-ignore
-        router.push(`/resumes/myresume/${resume.id}`)
+        router.push(`/resumes/myresume/${resume?.id!}`)
 
     }
-
-    const handleKeyDown = (event, ref) => {
-        // Verifica se a tecla pressionada é a Tab
-        const textarea = ref.current;
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        if (event.key === 'Tab') {
-            event.preventDefault(); // Impede o comportamento padrão (mudar foco)
-
-            // Insere uma tabulação (quatro espaços ou um caractere de tabulação "\t")
-            textarea.value = textarea.value.substring(0, start) + "\t" + textarea.value.substring(end);
-
-            // Atualiza a posição do cursor
-            textarea.selectionStart = textarea.selectionEnd = start + 1;
-        }
-
-        // Verifica se a tecla pressionada é o Enter
-        if (event.key === 'Enter') {
-            event.preventDefault(); // Impede o comportamento padrão de quebra de linha
-
-            // Insere uma nova linha
-            textarea.value = textarea.value.substring(0, start) + "\n" + textarea.value.substring(end);
-
-            // Atualiza a posição do cursor para a nova linha
-            textarea.selectionStart = textarea.selectionEnd = start + 1;
-        }
-    };
 
     const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
         // @ts-ignore
@@ -155,6 +142,7 @@ export default function Curriculo() {
     return (
 
         <div className="flex justify-center items-center">
+            {/* @ts-ignore */}
             <form onSubmit={handleSubmit(handleFormData)} className="w-[35rem] flex flex-col mt-7 p-2">
 
                 <div className="py-8">
@@ -339,28 +327,39 @@ export default function Curriculo() {
                         <option value="fluente">Fluente</option>
                     </select>
                 </Section>
+                <style>
+                    {`
+                .ql-editor.ql-blank {
+                    min-height: 8rem;
+                }
+                `}
+                </style>
 
                 <Section expandable legend="Habilidades">
-                    <textarea onKeyDown={(e) => handleKeyDown(e, habilidadesRef)} className="w-full mt-3 border-black border-2 rounded p-2 min-h-20" placeholder={`• Técnicas\n• Interpessoais (comunicação, trabalho em equipe, etc.)`} autoComplete="no" {...register('habilidades')} onChange={(e) => {
-                        setData({
-                            habilidades: e.target.value
-                        })
-                    }} ref={habilidadesRef} value={data.habilidades}>
+                    <div className="w-full min-h-36">
 
-                    </textarea>
+                        <ReactQuill
+                            theme="snow"
+                            {...register('habilidades')}
+                            onChange={handleSetHabilidades}
+                            className="w-full min-h-36 h-full"
+                            value={data.habilidades}
+                            placeholder={`• Técnicas\n• Interpessoais (comunicação, trabalho em equipe, etc.)`}
+                        />
+                    </div>
                 </Section>
 
                 <Section expandable legend="Objetivo">
+                    <div className="w-full min-h-36">
 
-
-                    <div className="w-full mt-3 pb-4">
-                        <textarea onKeyDown={(e) => handleKeyDown(e, objetivoRef)} className="w-full mt-3 border-black border-2 rounded p-2 min-h-20" placeholder="Uma breve descrição de seus objetivos de carreira e o que você busca na posição desejada." autoComplete="no" onChange={(e) => {
-                            setData({
-                                objetivo: e.target.value
-                            })
-                        }} ref={objetivoRef} value={data.objetivo}>
-
-                        </textarea>
+                        <ReactQuill
+                            theme="snow"
+                            {...register('objetivo')}
+                            onChange={handleSetObjetivo}
+                            className="w-full min-h-36 h-full"
+                            value={data.objetivo}
+                            placeholder={"Uma breve descrição de seus objetivos de carreira e o que você busca na posição desejada."}
+                        />
                     </div>
                 </Section>
                 <footer className="flex mb-8 gap-2 w-full">

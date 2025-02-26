@@ -6,6 +6,8 @@ import useProtectedRoute from '../../hooks/useProtectedRoute';
 import Loading from '../../components/loading';
 import { useParams } from 'next/navigation';
 import { getCurriculumById } from '@/app/resumes/data-fetch';
+import ReactQuill from 'react-quill';
+import "react-quill/dist/quill.snow.css";
 
 export default function Template() {
 
@@ -40,74 +42,57 @@ export default function Template() {
         <div className="left-column">
           <img src={data?.picture} alt="Foto de perfil" className="profile-img" />
           <p className='box-text'>{data?.pessoal.nome}</p>
-          <div className="contact-info">
-            <p>{data?.pessoal.celular}</p>
-            <p className='email'>{data?.pessoal.email}</p>
-          </div>
-          <div className="section">
-            <h3 className='txt-decoration'>CIDADE</h3>
-            <p className=''>{data?.pessoal.cidade} - <span className='uppercase'>{data?.pessoal.uf}</span> </p>
-            <p >CEP:{' '}
-              {data?.pessoal.cep}
+
+          <div className='text-left py-2'>
+            <b className='text-lg'>Aluno/Ex-aluno</b>
+            <p className='text-sm'>
+              {data?.educacional.curso}
             </p>
           </div>
-          <div className="section">
-            <h3 className='txt-decoration'>CEP</h3>
-            <p className='uppercase'>
-            </p>
+          <div className='text-left self-start'>
+            <b className='text-lg'>Etec</b>
+            <p className='text-sm'>{data?.pessoal.cidade} - <span className='uppercase'>{data?.pessoal.uf}</span> </p>
           </div>
         </div>
 
         <div className="right-column">
-          <p className='title-decoration'>OBJETIVO:</p>
+          <p className='title-decoration'>Contato</p>
+          <p className='px-3 text-sm'><b>Email:</b> {data?.pessoal.email}</p>
+          <p className='px-3 text-sm'><b>Celular:</b> {data?.pessoal.celular}</p>
           <p className='txt-justify'>
-            Lorem ipsum dolor sit amet. Sed nisi tempore est perspiciatis
-            galisum ut eligendi vel odit atque. Non laboriosam distinctio et
-            nisi molestiae qui mollitia consequuntur.
+            {data?.pessoal.objetivo}
 
           </p>
           <div className="section">
-            <p className='title-decoration'>Minhas Habilidades</p>
-            <ul className='txt-justify'>
-              <li>
-                Lorem ipsum dolor sit amet. Sed nisi tempore est perspiciatis
-                galisum ut eligendi vel odit atque. Non laboriosam distinctio et
-                nisi molestiae qui mollitia consequuntur.
-              </li>
-              <li>
-                Lorem ipsum dolor sit amet. Sed nisi tempore est perspiciatis
-                galisum ut eligendi vel odit atque. Non laboriosam distinctio et
-                nisi molestiae qui mollitia consequuntur.
-              </li>
-              <li>
-                Lorem ipsum dolor sit amet. Sed nisi tempore est perspiciatis
-                galisum ut eligendi vel odit atque. Non laboriosam distinctio et
-                nisi molestiae qui mollitia consequuntur.
-              </li>
-              <li>
-                Lorem ipsum dolor sit amet. Sed nisi tempore est perspiciatis
-                galisum ut eligendi vel odit atque. Non laboriosam distinctio et
-                nisi molestiae qui mollitia consequuntur.
-              </li>
-              <li>
-                Lorem ipsum dolor sit amet. Sed nisi tempore est perspiciatis
-                galisum ut eligendi vel odit atque. Non laboriosam distinctio et
-                nisi molestiae qui mollitia consequuntur.
-              </li>
-            </ul>
-            <p className='title-decoration'>Habilidades Complementares</p>
-            <ul className='txt-justify'>
-              <li>
-                Lorem ipsum dolor sit amet. Sed nisi tempore est perspiciatis
-                galisum ut eligendi vel odit atque. Non laboriosam distinctio et
-                nisi molestiae qui mollitia consequuntur.
-              </li>
-              <li>
-                Lorem ipsum dolor sit amet. Sed nisi tempore est perspiciatis
-                galisum ut eligendi vel odit atque. Non laboriosam distinctio et
-                nisi molestiae qui mollitia consequuntur.
-              </li>
-            </ul>
+            <style>
+              {`
+                .ql-container.ql-snow.ql-disabled {
+                  border: none;
+                }
+                .ql-toolbar.ql-snow {
+                    display: none;
+                }
+                .ql-editor.ql-blank {
+                    min-height: 8rem;
+                }
+                `}
+            </style>
+            <p className='title-decoration'>Habilidades</p>
+            <ReactQuill
+              theme="snow"
+              className="w-full text-xl"
+              value={data?.descricao?.habilidades}
+              readOnly
+            />
+
+            <p className='title-decoration'>Objetivo</p>
+
+            <ReactQuill
+              theme="snow"
+              className="w-full border-0"
+              value={data?.descricao?.objetivo}
+              readOnly
+            />
           </div>
           {/* <div className="section">
             <h3>Experiência</h3>

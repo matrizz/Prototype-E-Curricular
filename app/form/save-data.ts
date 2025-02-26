@@ -10,7 +10,7 @@ import {
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { getCurriculumById } from "../resumes/data-fetch";
 
-export async function SaveImageData(img, uid) {
+export async function SaveImageData(img: File, uid: string) {
   const userDocRef = doc(db, "users", uid);
   const userDoc = await getDoc(userDocRef);
 
@@ -22,8 +22,8 @@ export async function SaveImageData(img, uid) {
 
   if (userDoc.exists() && userDoc.data().hasDocument) {
     const resume = await getCurriculumById(userDoc.id)
-    console.log(userDoc)
-    UpdateImageData(image, resume)
+    console.log('resume:', resume)  
+    UpdateImageData(image, resume?.id!)
   }
 
   const storageRef = ref(storage, `images/${image.name}`);
@@ -46,7 +46,7 @@ export async function SaveImageData(img, uid) {
   imageUrl = await getDownloadURL(uploadTask.snapshot.ref);
   return imageUrl;
 }
-export async function UpdateImageData(newImage, existingImagePath) {
+export async function UpdateImageData(newImage: File, existingImagePath: string) {
   if (!newImage || !existingImagePath) {
     console.error("Imagem nova ou caminho da imagem existente não fornecidos.");
     return null;
@@ -89,7 +89,7 @@ export async function UpdateImageData(newImage, existingImagePath) {
   }
 }
 
-export async function UpdateCurriculumData(data, uid, resumeId) {
+export async function UpdateCurriculumData(data: any, uid: string, resumeId: string) {
   const docRef = doc(db, "curriculums", resumeId);
 
   await updateDoc(docRef, {
@@ -101,7 +101,7 @@ export async function UpdateCurriculumData(data, uid, resumeId) {
   return docRef;
 }
 
-export async function SaveCurriculumData(data, uid) {
+export async function SaveCurriculumData(data: any, uid: string) {
   const userDocRef = doc(db, "users", uid);
   const userDoc = await getDoc(userDocRef);
 
@@ -111,7 +111,11 @@ export async function SaveCurriculumData(data, uid) {
       ...data,
       updatedAt: new Date(),
     });
+    const resume = await getCurriculumById(uid) 
+    return resume;
+    
   } else {
+    console.log('2',userDoc)
     const docRef = await addDoc(collection(db, "curriculums"), {
       userId: uid,
       ...data,
